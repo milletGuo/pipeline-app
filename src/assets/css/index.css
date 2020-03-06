@@ -64,10 +64,14 @@
   display: block;
   width: 360px;
   padding: 10px;
-  color: #ffffff;
+  color: #ffffff !important;
   border-radius: 10px;
   z-index: 999;
   background: rgba(0, 0, 0, 0.5)
+}
+
+.dig-urface-panel label {
+  color: #ffffff !important;
 }
 
 .depth-input {

@@ -2,7 +2,9 @@ import MouseTool from '../mapTool/mouseTool';
 import InfoWindow from '../mapTool/infoWindow';
 
 import pipeLineInfo from '../../assets/pipeline_line.json';
-import pipePointInfo from '../../assets/pipeline_point.json'
+import pipePointInfo from '../../assets/pipeline_point.json';
+
+import fountain2Url from "../../assets/images/fountain2.png";
 
 const Cesium = window.Cesium;
 const mars3DTilesetUrl = window.serverUrl.mars3DTilesetUrl;
@@ -18,15 +20,26 @@ export default class MapControl {
             feature: undefined,
             originalColor: undefined
         };
-        this.infoWindowArray = []
+        this.infoWindowArray = [];
+        this.particleSystems = [];
+        this.particleOptions = {
+            emissionRate: 20,
+            particleSize: 0.5,
+            minimumParticleLife: 6,
+            maximumParticleLife: 7,
+            minimumSpeed: 9,
+            maximumSpeed: 9.5,
+            startScale: 1,
+            endScale: 20,
+        }
     }
 
     // 初始化加载地球
     initalize = () => {
-        this.webGlobe = new Cesium.WebSceneControl(this.containerRef.current, {});
+        this.webGlobe = new Cesium.WebSceneControl(this.containerRef.current, { shouldAnimate: true });
         this.webGlobe.appendTDTuMapByWMTS('img');
         this.addM3D();
-        
+
         // this.webGlobe.flyTo(114.2, 31, 10000, 2);
         // this.addM3DModel();
     }
@@ -290,5 +303,105 @@ export default class MapControl {
             children: this.M3DModel[0].root.children
         }
         this.webGlobe.recoverExplosion(option);
+    }
+
+    addExplosion = () => {
+        let viewer = this.webGlobe.viewer;
+        viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        viewer.screenSpaceEventHandler.setInputAction((movement) => {
+            let pickPosition = viewer.scene.pickPosition(movement.position);
+            this.addFountain(pickPosition);
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    }
+
+    addFountain = (pickPosition) => {
+        let viewer = this.webGlobe.viewer;
+        let scene = viewer.scene;
+        let entity = viewer.entities.add({ position: pickPosition });
+        let particle = scene.primitives.add(new Cesium.ParticleSystem({
+            // 粒子的图片
+            image: fountain2Url,
+            // 起始颜色
+            startColor: new Cesium.Color(1, 1, 1, 0.9),
+            // 结束颜色
+            endColor: new Cesium.Color(0.80, 0.86, 1, 0.4),
+            // 开始大小比例
+            startScale: this.particleOptions.startScale,
+            // 结束大小比例
+            endScale: this.particleOptions.endScale,
+            // 最小生命周期
+            minimumParticleLife: this.particleOptions.minimumParticleLife,
+            // 最大生命周期
+            maximumParticleLife: this.particleOptions.maximumParticleLife,
+            // 最小速度
+            minimumSpeed: this.particleOptions.minimumSpeed,
+            // 最大速度
+            maximumSpeed: this.particleOptions.maximumSpeed,
+            // 粒子大小
+            imageSize: new Cesium.Cartesian2(this.particleOptions.particleSize, this.particleOptions.particleSize * 2),
+            // 粒子数量
+            emissionRate: this.particleOptions.emissionRate,
+            lifetime: 4,
+            // 循环是否开启
+            loop: true,
+            // 粒子的释放方向
+            emitter: new Cesium.CircleEmitter(0.2),
+            // 是否以米为单位
+            sizeInMeters: true
+        }));
+
+        viewer.scene.preUpdate.addEventListener((scene, time) => {
+            particle.modelMatrix = this.computeModelMatrix(entity, time)
+            particle.emitterModelMatrix = this.computeEmitterModelMatrix()
+        });
+
+        this.particleSystems.push(particle);
+    }
+
+    computeModelMatrix(entity, time) {
+        return entity.computeModelMatrix(time, new Cesium.Matrix4());
+    }
+
+    computeEmitterModelMatrix() {
+        let emitterModelMatrix = new Cesium.Matrix4()
+        let translation = new Cesium.Cartesian3()
+        let rotation = new Cesium.Quaternion()
+        let hpr = new Cesium.HeadingPitchRoll()
+        let trs = new Cesium.TranslationRotationScale()
+
+        hpr = Cesium.HeadingPitchRoll.fromDegrees(0.0, 0.0, 0.0, hpr)
+        trs.translation = Cesium.Cartesian3.fromElements(0, 0, 1, translation)
+        trs.rotation = Cesium.Quaternion.fromHeadingPitchRoll(hpr, rotation)
+        return Cesium.Matrix4.fromTranslationRotationScale(trs, emitterModelMatrix)
+    }
+
+    updateParam = (params) => {
+        this.particleOptions.startScale = params.startScale;
+        this.particleOptions.endScale = params.endScale;
+        this.particleOptions.minimumParticleLife = params.minimumParticleLife;
+        this.particleOptions.maximumParticleLife = params.maximumParticleLife;
+        this.particleOptions.minimumSpeed = params.minimumSpeed;
+        this.particleOptions.maximumSpeed = params.maximumSpeed;
+        this.particleOptions.emissionRate = params.emissionRate;
+        this.particleOptions.particleSize = params.particleSize;
+        this.particleSystems.forEach((item) => {
+            item.startScale = params.startScale;
+            item.endScale = params.endScale;
+            item.minimumParticleLife = params.minimumParticleLife;
+            item.maximumParticleLife = params.maximumParticleLife;
+            item.minimumSpeed = params.minimumSpeed;
+            item.maximumSpeed = params.maximumSpeed;
+            item.emissionRate = params.emissionRate;
+            // console.log(params.particleSize)
+            // item.imageSize = new Cesium.Cartesian2(params.particleSize, params.particleSize * 2);
+        });
+    }
+
+    resetExplosion = () => {
+        let viewer = this.webGlobe.viewer;
+        viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        this.particleSystems.forEach((item) => {
+            viewer.scene.primitives.remove(item);
+        });
     }
 }

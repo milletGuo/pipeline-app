@@ -3,6 +3,7 @@ import Operate from '../panel/Operate';
 import MapControl from './MapControl';
 import DigSurfacePanel from '../panel/DigSurfacePanel';
 import ExplosionAnaPanel from '../panel/ExplosionAnaPanel';
+import ExplosionPipePanel from '../panel/ExplosionPipePanel';
 
 import axios from 'axios';
 
@@ -13,7 +14,8 @@ export default class CesiumMap extends PureComponent {
         super(props);
         this.state = {
             display: 'none',
-            visible: 'none'
+            visible: 'none',
+            particleVisible: 'none',
         }
         this.containerRef = React.createRef();
     }
@@ -119,6 +121,20 @@ export default class CesiumMap extends PureComponent {
         this.mapControl.resetModel();
     }
 
+    explosionPipePanel = (status) => {
+        if (status) {
+            this.mapControl.addExplosion();
+            this.setState({ particleVisible: 'block' });
+        } else {
+            this.setState({ particleVisible: 'none' });
+            this.mapControl.resetExplosion();
+        }
+    }
+
+    updateParam = (explosionParam) => {
+        this.mapControl.updateParam(explosionParam);
+    }
+
     render() {
         return (
             <div>
@@ -129,6 +145,7 @@ export default class CesiumMap extends PureComponent {
                     pipeLineInfo={(status) => this.pipeLineInfo(status)}
                     facilityAccess={(status) => this.facilityAccess(status)}
                     explosionAnaPanel={(status) => this.explosionAnaPanel(status)}
+                    explosionPipePanel={(status) => this.explosionPipePanel(status)}
                 >
                 </Operate>
                 <DigSurfacePanel
@@ -143,6 +160,10 @@ export default class CesiumMap extends PureComponent {
                     explosionAna={(explosionParam) => this.explosionAna(explosionParam)}
                     resetModel={this.resetModel}>
                 </ExplosionAnaPanel>
+                <ExplosionPipePanel
+                    particleVisible={this.state.particleVisible}
+                    updateParam={(explosionParam) => this.updateParam(explosionParam)}>
+                </ExplosionPipePanel>
             </div>
         )
     }

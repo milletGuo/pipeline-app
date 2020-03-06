@@ -1,0 +1,75 @@
+@import '~antd/dist/antd.css';
+* {
+  margin: 0;
+  padding: 0;
+  font-family: "PingFangSC-Regular", "Microsoft YaHei", "微软雅黑", "Arial", "Helvetica Neue", "Helvetica", "Arial", "sans-serif";
+  box-sizing: border-box;
+}
+
+/*chrome 修改滚动条样式，只有谷歌浏览器生效*/
+
+::-webkit-scrollbar-track-piece {
+  width: 5px;
+  background-color: #ededed;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 10px;
+  background-color: #ededed;
+}
+
+::-webkit-scrollbar-thumb {
+  width: 5px;
+  border-radius: 10px;
+  background-color: #ccc;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  width: 5px;
+  background-color: #b3b3b3;
+}
+
+/* #cesium-map {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+} */
+
+.operate {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 2;
+}
+
+.operate div {
+  margin: 10px 0px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  background: #947ec7;
+}
+
+.operate div span {
+  color: #ffffff;
+}
+
+.dig-urface-panel {
+  position: absolute;
+  top: 36px;
+  left: 150px;
+  display: block;
+  width: 360px;
+  padding: 10px;
+  color: #ffffff;
+  border-radius: 10px;
+  z-index: 999;
+  background: rgba(0, 0, 0, 0.5)
+}
+
+.depth-input {
+  margin-right:30px;
+}

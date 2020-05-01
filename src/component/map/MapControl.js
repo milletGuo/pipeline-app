@@ -38,7 +38,7 @@ export default class MapControl {
     initalize = () => {
         this.webGlobe = new Cesium.WebSceneControl(this.containerRef.current, { shouldAnimate: true });
         this.webGlobe.appendTDTuMapByWMTS('img');
-        this.addM3D();
+        this.addM3DModel();
 
         // this.webGlobe.flyTo(114.2, 31, 10000, 2);
         // this.addM3DModel();
@@ -56,34 +56,44 @@ export default class MapControl {
     }
 
     addM3DModel = () => {
-        // 加载中地IGServer发布的M3D缓存地图文档
-        this.M3DModel = this.webGlobe.append('http://101.37.36.37:6163/igs/rest/g3d/pointLine', {});
+        let ModelM3D = this.webGlobe.append('http://101.37.36.37:6163/igs/rest/g3d/weifang_pipe', {});
+
+        //跳转到固定位置
+        this.webGlobe.flyToEx(119.19064769, 36.70580655, {
+            height: 123.49,
+            heading: 360,
+            pitch: -18.55,
+            roll: 0
+        });
     }
 
     pipeLineInfo = (status) => {
         let viewer = this.webGlobe.viewer;
         if (status) {
             viewer.screenSpaceEventHandler.setInputAction((movement) => {
-                this.removePopUp('popup');
                 let pickedFeature = viewer.scene.pick(movement.position);
-                let pickPosition = viewer.scene.pickPosition(movement.position);
-                if (pickedFeature instanceof Cesium.Cesium3DTileFeature) {
-                    if (pickedFeature != this.previousPickedEntity.feature) {
-                        if (this.previousPickedEntity.feature != undefined) {
-                            //还原前选择要素的本颜色
-                            this.previousPickedEntity.feature.color = this.previousPickedEntity.originalColor;
-                            //将当前选择要素及其颜色添加到previousPickedEntity
-                            this.previousPickedEntity.feature = pickedFeature;
-                            this.previousPickedEntity.originalColor = pickedFeature.color;
-                        }
-                    }
-                    //将当前选择要素及其颜色添加到previousPickedEntity
-                    this.previousPickedEntity.feature = pickedFeature;
-                    this.previousPickedEntity.originalColor = pickedFeature.color;
-                    pickedFeature.color = Cesium.Color.BLUE;
-                    this.openPointInfo(pickedFeature, pickPosition);
-                } else {
-                    console.log(pickPosition, '未选中');
+				 let pickPosition = viewer.scene.pickPosition(movement.position);
+				console.log(this.globleToLatLng(pickPosition),'位置');
+                if (Cesium.defined(pickedFeature)) {
+                    let layerList = [pickedFeature.tileset];
+                    console.log(layerList, '图层');
+                    let title = pickedFeature.getProperty('name');
+                    let values = title.split('_');
+                    let vlueNumber = parseInt(values[2]);
+                    let idList = [vlueNumber];
+                    let options = { color: Cesium.Color.BLUE };
+                    this.webGlobe.startCustomDisplay(layerList, idList, options);
+                    const queryParam = new window.G3DDocQuery();
+                    queryParam.geometryType = 'Point3D';
+                    queryParam.serverIp = '101.37.36.37';
+                    queryParam.serverPort = '6163';
+                    queryParam.gdbp = 'gdbp://MapGisLocal/pipe_weifang/ds/0413/sfcls/gs_pipeline_type_圆管';
+                    queryParam.structs = '{"IncludeAttribute":true,"IncludeGeometry":true,"IncludeWebGraphic":true}';
+                    queryParam.objectIds = vlueNumber;
+                    queryParam.queryG3DFeature(result => {
+                        console.log(vlueNumber, 'id');
+                        console.log(result, '结果');
+                    }, null, 'post');
                 }
             }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
         } else {
@@ -149,15 +159,8 @@ export default class MapControl {
     }
 
     openDepthCheck = () => {
-        // let viewer = this.webGlobe.viewer;
-        // viewer.scene.globe.depthTestAgainstTerrain = true;
-        //popup的位置
-        let postion = Cesium.Cartesian3.fromDegrees(114.2, 31);
-        console.log(postion);
-        //添加PopUP
-        this.webGlobe.AppendPopUp('popup', '测试1测试1测试1<br/>测试1测试2<br/>', postion, [95, 0], this.webGlobe.removePopUp);
-        //刷新
-        this.webGlobe.refreshPopUps();
+        let viewer = this.webGlobe.viewer;
+        viewer.scene.globe.depthTestAgainstTerrain = true;
     }
 
     closeDepthCheck = () => {
